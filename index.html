@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>پازل یزد - ۱۶ تکه</title>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      background: linear-gradient(135deg, #f5e6d3, #d8c3a3);
+      text-align: center;
+      padding: 15px;
+      direction: rtl;
+    }
+    h1 { color: #8b5a2b; margin: 15px 0; font-size: 1.6rem; }
+    canvas {
+      border: 4px solid #8b5a2b;
+      border-radius: 14px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+      max-width: 100%;
+      height: auto;
+      touch-action: none;
+    }
+    #winMessage {
+      display: none;
+      margin: 25px auto;
+      padding: 20px;
+      background: rgba(255,255,255,0.95);
+      border-radius: 18px;
+      max-width: 560px;
+      box-shadow: 0 12px 25px rgba(0,0,0,0.15);
+      animation: fadeIn 1s ease-in-out;
+    }
+    .emoji { font-size: 1.8rem; margin: 0 5px; }
+    .btn {
+      margin-top: 18px;
+      padding: 10px 28px;
+      background: #d4af37;
+      color: white;
+      border: none;
+      border-radius: 50px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(212,175,55,0.4);
+      transition: 0.3s;
+    }
+    .btn:hover { transform: scale(1.05); background: #b8972a; }
+    .en { font-family: 'Segoe UI', sans-serif; direction: ltr; margin-top: 18px; font-size: 0.9rem; color: #555; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+  <h1>پازل یزد رو کامل کن و جایزه بگیر!</h1>
+  <canvas id="puzzle" width="400" height="400"></canvas>
+
+  <div id="winMessage">
+    <p class="emoji">🎉 تبریک! پازل یزد رو کامل کردی</p>
+    <p><strong>🏛 مسجد جامع یزد</strong><br>
+       <strong>🍬 شیرینی‌های سنتی: قطاب و باقلوای یزدی</strong></p>
+    <p>برای دریافت <strong>تخفیف ۲۰٪</strong>، اسکرین‌شات پازل کامل‌شده را برای ما ارسال کن.</p>
+    <hr style="margin:18px 0; border:1px dashed #d4af37;">
+    <p class="en">
+      🎉 Congratulations! You completed the Yazd puzzle!<br>
+      🏛 Jame Mosque of Yazd<br>
+      🍬 Traditional Yazdi sweets: Qottab & Baklava<br><br>
+      <strong>Send us a screenshot of your completed puzzle and get 20% OFF.</strong>
+    </p>
+    <button class="btn" onclick="takeScreenshot()">📸 اسکرین‌شات بگیر</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('puzzle');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.src = 'https://i.imgur.com/3y8nJ1k.jpg';
+
+    const pieces = [];
+    const rows = 4, cols = 4;
+    let correctPositions = 0;
+
+    img.onload = () => cutImage();
+
+    function cutImage() {
+      const pieceWidth = img.width / cols;
+      const pieceHeight = img.height / rows;
+
+      for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+          const piece = {
+            sx: j * pieceWidth,
+            sy: i * pieceHeight,
+            correctX: j * 100,
+            correctY: i * 100,
+            currentX: j * 100,
+            currentY: i * 100,
+            width: pieceWidth,
+            height: pieceHeight
+          };
+          pieces.push(piece);
+        }
+      }
+      shuffle(pieces);
+      draw();
+      canvas.addEventListener('click', handleClick);
+      canvas.addEventListener('touchstart', handleTouch);
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      pieces.forEach(p => {
+        ctx.drawImage(img, p.sx, p.sy, p.width, p.height,
+                      p.currentX, p.currentY, 100, 100);
+      });
+    }
+
+    function handleClick(e) { handleInput(e.clientX, e.clientY); }
+    function handleTouch(e) { 
+      e.preventDefault();
+      const touch = e.touches[0];
+      handleInput(touch.clientX, touch.clientY);
+    }
+
+    function handleInput(x, y) {
+      const rect = canvas.getBoundingClientRect();
+      const col = Math.floor((x - rect.left) / 100);
+      const row = Math.floor((y - rect.top) / 100);
+      const index = row * cols + col;
+
+      if (index >= pieces.length || index < 0) return;
+
+      const clickedPiece = pieces[index];
+      const correctPiece = pieces.find(p => 
+        Math.abs(p.correctX - clickedPiece.currentX) < 1 &&
+        Math.abs(p.correctY - clickedPiece.currentY) < 1
+      );
+
+      if (correctPiece && correctPiece !== clickedPiece) {
+        [clickedPiece.currentX, correctPiece.currentX] = [correctPiece.currentX, clickedPiece.currentX];
+        [clickedPiece.currentY, correctPiece.currentY] = [correctPiece.currentY, clickedPiece.currentY];
+      }
+
+      draw();
+      checkCompletion();
+    }
+
+    function checkCompletion() {
+      correctPositions = pieces.filter(p => 
+        Math.abs(p.currentX - p.correctX) < 2 && 
+        Math.abs(p.currentY - p.correctY) < 2
+      ).length;
+
+      if (correctPositions === pieces.length) {
+        setTimeout(() => {
+          document.getElementById('winMessage').style.display = 'block';
+        }, 600);
+      }
+    }
+
+    function takeScreenshot() {
+      html2canvas(canvas).then(c => {
+        const link = document.createElement('a');
+        link.download = 'پازل_یزد_کامل.png';
+        link.href = c.toDataURL();
+        link.click();
+      });
+    }
+  </script>
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</body>
+</html>
